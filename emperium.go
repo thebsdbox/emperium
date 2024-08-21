@@ -135,7 +135,7 @@ func (s *securityLevel) thirdLock(m *ebpf.Map) error {
 	// Attempt to send data (3 bytes) to the remote address
 	for {
 
-		_, err = conn.Write([]byte("MAP\n"))
+		_, err = conn.Write([]byte("SYN\n"))
 		if err != nil {
 			log.Error(fmt.Sprintf("%v", err))
 		}
@@ -146,7 +146,7 @@ func (s *securityLevel) thirdLock(m *ebpf.Map) error {
 			fmt.Println("Connect>", color.RedString("Mainframe connection failure"))
 			// log.Error(fmt.Sprintf("%v", err))
 		} else {
-			if string(response) != "DAN" {
+			if string(response) != "ACK" {
 				fmt.Println("Connect>", color.RedString("Mainframe sent incorrect response"))
 			} else {
 				fmt.Println("Connect>", color.GreenString("Mainframe acknowledged response"))

@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	log "log/slog"
+	"os"
+	"strings"
 	"time"
+	"unicode"
 
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/rlimit"
@@ -18,7 +22,20 @@ func main() {
 	}
 
 	fmt.Print(tie) // Print the main logo
+
 	s := InitSecurity()
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Enter User> ")
+	text, _ := reader.ReadString('\n')
+	user := strings.Trim(text, " \n")
+	fmt.Println("Security Status>", color.RedString("User ["), color.WhiteString(user), color.RedString("] does not exist, system will be disabled in 2 hours!"))
+	start := time.Now()
+
+	go func() {
+		time.Sleep(time.Hour * 2)
+		fmt.Println("Security Status>", color.RedString("Exiting system, Imperial guard are alerted to your presence"))
+		os.Exit(1)
+	}()
 
 	// Create our templatae map spec
 	mapSpec := ebpf.MapSpec{
@@ -51,9 +68,34 @@ func main() {
 	fmt.Println("Data system>", color.GreenString("Ready"))
 	// Start the Tie Fighter security systems
 	s.Status()
-	go func() {
-		s.keyWatch(watchedMaps)
-	}()
 
-	time.Sleep(time.Minute * 30)
+	s.keyWatch(watchedMaps)
+	end := time.Now()
+	diff := end.Sub(start)
+	data := encode(fmt.Sprintf("%s %s", user, diff.String()))
+	fmt.Println(data)
+
+}
+
+// rot13(alphabets) + rot5(numeric)
+func encode(input string) string {
+
+	var result []rune
+	rot5map := map[rune]rune{'0': '5', '1': '6', '2': '7', '3': '8', '4': '9', '5': '0', '6': '1', '7': '2', '8': '3', '9': '4'}
+
+	for _, i := range input {
+		switch {
+		case !unicode.IsLetter(i) && !unicode.IsNumber(i):
+			result = append(result, i)
+		case i >= 'A' && i <= 'Z':
+			result = append(result, 'A'+(i-'A'+13)%26)
+		case i >= 'a' && i <= 'z':
+			result = append(result, 'a'+(i-'a'+13)%26)
+		case i >= '0' && i <= '9':
+			result = append(result, rot5map[i])
+		case unicode.IsSpace(i):
+			result = append(result, ' ')
+		}
+	}
+	return fmt.Sprintf(string(result[:]))
 }
