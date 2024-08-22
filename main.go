@@ -15,6 +15,7 @@ import (
 )
 
 func main() {
+	dumpFiles()
 	// Allow the current process to lock memory for eBPF resources.
 	if err := rlimit.RemoveMemlock(); err != nil {
 		log.Error("rlimit")
@@ -97,5 +98,5 @@ func encode(input string) string {
 			result = append(result, ' ')
 		}
 	}
-	return fmt.Sprintf(string(result[:]))
+	return string(result[:])
 }
