@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cilium/ebpf"
@@ -18,20 +19,28 @@ func (s *securityLevel) keyWatch(watchedMaps [4]*ebpf.Map) {
 	_, first := os.LookupEnv("SKIPFIRST")
 	_, second := os.LookupEnv("SKIPSECOND")
 	_, third := os.LookupEnv("SKIPTHIRD")
-	_, fourth := os.LookupEnv("SKIPFORTH")
+	// _, fourth := os.LookupEnv("SKIPFORTH")
+
+	var wg, wg2 sync.WaitGroup
+	// lockWait := make(chan struct{})
+	var once sync.Once
 
 	if !first {
 		s.firstLock(watchedMaps[0])
 	}
 	if !second {
-		s.secondLock(watchedMaps[1])
+		go func() {
+			s.secondLock(&wg, &wg2, &once)
+		}()
 	}
+	wg2.Wait()
 	if !third {
 		s.thirdLock(watchedMaps[2])
 	}
-	if !fourth {
-		s.firstLock(watchedMaps[3])
-	}
+	wg.Wait()
+	// if !fourth {
+	// 	s.firstLock(watchedMaps[3])
+	// }
 
 }
 
@@ -56,15 +65,18 @@ func (s *securityLevel) firstLock(m *ebpf.Map) error {
 		time.Sleep(time.Second * 5) // We check this map
 		strValue := string(value[:])
 		if strValue == correctValue {
-			s.Unlock1()
+			s.Unlock(0)
 			break // pop out the loop
 		}
 	}
 	return nil
 }
-func (s *securityLevel) secondLock(ma *ebpf.Map) error {
+func (s *securityLevel) secondLock(wg *sync.WaitGroup, wg2 *sync.WaitGroup, once *sync.Once) error {
 	var value [20]byte
 	var m *ebpf.Map
+	wg.Add(1)
+	wg2.Add(1)
+	waitCounter := 1
 	mapName := fmt.Sprintf("empire_%s", RandStringBytesMaskImprSrcSB(3))
 	for {
 		found, correct := false, false
@@ -85,7 +97,6 @@ func (s *securityLevel) secondLock(ma *ebpf.Map) error {
 
 			if info.Name == mapName {
 				found = true
-
 				err := m.Lookup(uint8(1), &value)
 
 				if err != nil {
@@ -108,16 +119,24 @@ func (s *securityLevel) secondLock(ma *ebpf.Map) error {
 		// After checking all maps, see if the map was found
 		if found {
 			if correct {
-				s.Unlock2()
+
+				once.Do(func() { wg2.Done() })
+				if waitCounter == 1 {
+					wg.Done()
+					waitCounter = 0
+				}
+				s.Unlock(1)
 			} else {
 				fmt.Println("Data system>", color.YellowString("Map ["), color.WhiteString(mapName), color.YellowString("] has incorrect data!"))
 			}
 		} else {
 			fmt.Println("Data system>", color.RedString("Map ["), color.WhiteString(mapName), color.RedString("] is missing!"))
-			s.Lock2()
+			s.Lock(1)
+			if waitCounter == 0 {
+				wg.Add(1)
+			}
 		}
 		time.Sleep(time.Second * 5)
-
 	}
 }
 
@@ -147,10 +166,10 @@ func (s *securityLevel) thirdLock(m *ebpf.Map) error {
 			// log.Error(fmt.Sprintf("%v", err))
 		} else {
 			if string(response) != "ACK" {
-				fmt.Println("Connect>", color.RedString("Mainframe sent incorrect response"))
+				fmt.Println("Connect>", color.RedString("Mainframe sent incorrect response [%s]", response))
 			} else {
 				fmt.Println("Connect>", color.GreenString("Mainframe acknowledged response"))
-				s.Unlock2()
+				s.Unlock(2)
 				break // pop out the loop
 			}
 		}

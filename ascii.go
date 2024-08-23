@@ -31,71 +31,39 @@ const tie = `
 `
 
 type securityLevel struct {
-	lock1 bool
-	lock2 bool
-	lock3 bool
-	lock4 bool
+	locks []bool
 }
 
-func InitSecurity() *securityLevel {
+func InitSecurity(count int) *securityLevel {
 	fmt.Println("Security Status>", color.YellowString("Initialising..."))
 	fmt.Println("Security Status>", color.GreenString("Enabled"))
-	return &securityLevel{}
+	return &securityLevel{locks: make([]bool, count)}
 }
 
-func (s *securityLevel) lock1Status() {
-	if s.lock1 {
-		fmt.Println("Security Lock 1> ", color.WhiteString("["), color.RedString("▮"), color.WhiteString("]"))
+func (s *securityLevel) lockStatus(lock int) {
+	if s.locks[lock] {
+		fmt.Println(fmt.Sprintf("Security Lock %d> ", lock), color.WhiteString("["), color.RedString("▮"), color.WhiteString("]"))
 	} else {
-		fmt.Println("Security Lock 1> ", color.WhiteString("["), color.GreenString("▮"), color.WhiteString("]"))
+		fmt.Println(fmt.Sprintf("Security Lock %d> ", lock), color.WhiteString("["), color.GreenString("▮"), color.WhiteString("]"))
 	}
 }
 
-func (s *securityLevel) lock2Status() {
-	if s.lock2 {
-		fmt.Println("Security Lock 2> ", color.WhiteString("["), color.RedString("▮"), color.WhiteString("]"))
-	} else {
-		fmt.Println("Security Lock 2> ", color.WhiteString("["), color.GreenString("▮"), color.WhiteString("]"))
+func (s *securityLevel) Lock(lock int) {
+	if s.locks[lock] {
+		s.locks[lock] = false
+		s.lockStatus(lock)
 	}
 }
 
-func (s *securityLevel) lock3Status() {
-	if s.lock3 {
-		fmt.Println("Security Lock 3> ", color.WhiteString("["), color.RedString("▮"), color.WhiteString("]"))
-	} else {
-		fmt.Println("Security Lock 3> ", color.WhiteString("["), color.GreenString("▮"), color.WhiteString("]"))
-	}
-}
-func (s *securityLevel) lock4Status() {
-	if s.lock4 {
-		fmt.Println("Security Lock 4> ", color.WhiteString("["), color.RedString("▮"), color.WhiteString("]"))
-	} else {
-		fmt.Println("Security Lock 4> ", color.WhiteString("["), color.GreenString("▮"), color.WhiteString("]"))
+func (s *securityLevel) Unlock(lock int) {
+	if !s.locks[lock] {
+		s.locks[lock] = true
+		s.lockStatus(lock)
 	}
 }
 
 func (s *securityLevel) Status() {
-	s.lock1Status()
-	s.lock2Status()
-	s.lock3Status()
-	s.lock4Status()
-}
-
-func (s *securityLevel) Unlock1() {
-	s.lock1 = true
-	s.lock1Status()
-}
-
-func (s *securityLevel) Unlock2() {
-	if !s.lock2 {
-		s.lock2 = true
-		s.lock2Status()
-	}
-}
-
-func (s *securityLevel) Lock2() {
-	if s.lock2 {
-		s.lock2 = false
-		s.lock2Status()
+	for x := range s.locks {
+		s.lockStatus(x)
 	}
 }

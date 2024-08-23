@@ -16,6 +16,7 @@ import (
 
 func main() {
 	dumpFiles()
+
 	// Allow the current process to lock memory for eBPF resources.
 	if err := rlimit.RemoveMemlock(); err != nil {
 		log.Error("rlimit")
@@ -24,7 +25,8 @@ func main() {
 
 	fmt.Print(tie) // Print the main logo
 
-	s := InitSecurity()
+	s := InitSecurity(3)
+
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("Enter User> ")
 	text, _ := reader.ReadString('\n')
@@ -74,7 +76,8 @@ func main() {
 	end := time.Now()
 	diff := end.Sub(start)
 	data := encode(fmt.Sprintf("%s %s", user, diff.String()))
-	fmt.Println(data)
+	fmt.Println("Security>", color.BlueString("Root Key>"), color.GreenString(data))
+	fmt.Println("System>", color.GreenString("Shutting Down!"))
 
 }
 
