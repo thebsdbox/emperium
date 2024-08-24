@@ -15,7 +15,16 @@ import (
 )
 
 func main() {
-	dumpFiles()
+	uid := os.Getuid()
+	if uid != 0 {
+		fmt.Println("System>", color.YellowString(fmt.Sprintf("id [%d]>", os.Getuid())), color.RedString("Emperium system must be started with as root, please use sudo"))
+		os.Exit(1)
+	}
+
+	err := dumpFiles()
+	if err != nil {
+		fmt.Println("System>", color.RedString(err.Error()))
+	}
 
 	// Allow the current process to lock memory for eBPF resources.
 	if err := rlimit.RemoveMemlock(); err != nil {

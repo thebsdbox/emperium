@@ -14,7 +14,9 @@ which upx > /dev/null
 if [ $? -eq 1 ]; then
     echo "Not found, binaries wont be compressed"
 else 
-    upx ./bin/emperium-x86_64
-    upx ./bin/emperium-aarch64
+  #  upx  ./bin/emperium-x86_64
+  #  upx  ./bin/emperium-aarch64
+    upx --ultra-brute ./bin/emperium-x86_64
+    upx --ultra-brute ./bin/emperium-aarch64
 fi
 rm -rf ebpf.tar.gz
