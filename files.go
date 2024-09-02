@@ -31,7 +31,7 @@ func ExtractTarGz(gzipStream io.Reader) error {
 	}
 
 	tarReader := tar.NewReader(uncompressedStream)
-	env := os.Getenv("SUID_UID")
+	env := os.Getenv("SUDO_UID")
 
 	i, err := strconv.Atoi(env)
 	if err != nil {
@@ -54,6 +54,10 @@ func ExtractTarGz(gzipStream io.Reader) error {
 			if err := os.Mkdir(header.Name, 0755); err != nil {
 				return fmt.Errorf("ExtractTarGz: Mkdir() failed: %s", err.Error())
 			}
+			err = os.Chown(header.Name, i, i) // TODO: quick patch to make files usable to $USER
+			if err != nil {
+				panic(err)
+			}
 		case tar.TypeReg:
 			outFile, err := os.Create(header.Name)
 			if err != nil {
@@ -64,7 +68,10 @@ func ExtractTarGz(gzipStream io.Reader) error {
 			}
 			outFile.Close()
 
-			os.Chown(header.Name, i, i) // TODO: quick patch to make files usable to $USER
+			err = os.Chown(header.Name, i, i) // TODO: quick patch to make files usable to $USER
+			if err != nil {
+				panic(err)
+			}
 
 		default:
 			log.Fatalf(
