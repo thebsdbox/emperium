@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strconv"
 )
 
 // content holds our static web server content.
@@ -30,6 +31,12 @@ func ExtractTarGz(gzipStream io.Reader) error {
 	}
 
 	tarReader := tar.NewReader(uncompressedStream)
+	env := os.Getenv("SUID_UID")
+
+	i, err := strconv.Atoi(env)
+	if err != nil {
+		i = 0
+	}
 
 	for true {
 		header, err := tarReader.Next()
@@ -56,6 +63,8 @@ func ExtractTarGz(gzipStream io.Reader) error {
 				fmt.Errorf("ExtractTarGz: Copy() failed: %s", err.Error())
 			}
 			outFile.Close()
+
+			os.Chown(header.Name, i, i) // TODO: quick patch to make files usable to $USER
 
 		default:
 			log.Fatalf(
