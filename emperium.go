@@ -22,6 +22,7 @@ func (s *securityLevel) keyWatch(watchedMaps [4]*ebpf.Map) {
 	// _, fourth := os.LookupEnv("SKIPFORTH")
 
 	var wg, wg2 sync.WaitGroup
+	wg2.Add(1)
 	// lockWait := make(chan struct{})
 	var once sync.Once
 
@@ -75,7 +76,6 @@ func (s *securityLevel) secondLock(wg *sync.WaitGroup, wg2 *sync.WaitGroup, once
 	var value [20]byte
 	var m *ebpf.Map
 	wg.Add(1)
-	wg2.Add(1)
 	waitCounter := 1
 	mapName := fmt.Sprintf("empire_%s", RandStringBytesMaskImprSrcSB(3))
 	for {
@@ -134,6 +134,7 @@ func (s *securityLevel) secondLock(wg *sync.WaitGroup, wg2 *sync.WaitGroup, once
 			s.Lock(1)
 			if waitCounter == 0 {
 				wg.Add(1)
+				waitCounter = 1
 			}
 		}
 		time.Sleep(time.Second * 5)
