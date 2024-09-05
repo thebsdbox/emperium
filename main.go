@@ -34,7 +34,7 @@ func main() {
 
 	fmt.Print(tie) // Print the main logo
 
-	s := InitSecurity(3)
+	s := InitSecurity(4)
 
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("Enter User> ")

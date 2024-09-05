@@ -19,7 +19,7 @@ func (s *securityLevel) keyWatch(watchedMaps [4]*ebpf.Map) {
 	_, first := os.LookupEnv("SKIPFIRST")
 	_, second := os.LookupEnv("SKIPSECOND")
 	_, third := os.LookupEnv("SKIPTHIRD")
-	// _, fourth := os.LookupEnv("SKIPFORTH")
+	_, fourth := os.LookupEnv("SKIPFOURTH")
 
 	var wg, wg2 sync.WaitGroup
 	wg2.Add(1)
@@ -38,10 +38,10 @@ func (s *securityLevel) keyWatch(watchedMaps [4]*ebpf.Map) {
 	if !third {
 		s.thirdLock(watchedMaps[2])
 	}
+	if !fourth {
+		s.fourthLock(watchedMaps[3])
+	}
 	wg.Wait()
-	// if !fourth {
-	// 	s.firstLock(watchedMaps[3])
-	// }
 
 }
 
@@ -142,6 +142,70 @@ func (s *securityLevel) secondLock(wg *sync.WaitGroup, wg2 *sync.WaitGroup, once
 }
 
 func (s *securityLevel) thirdLock(m *ebpf.Map) error {
+	fmt.Println("Authentication>", color.YellowString("Waiting for Auth on port 2000"))
+
+	// Start a listener on localhost (port 2000)
+	go func() {
+		l, err := net.Listen("tcp", "127.0.0.1:2000")
+		if err != nil {
+			panic(err)
+		}
+		defer l.Close()
+		for {
+			// Wait for a connection.
+			conn, _ := l.Accept()
+			// We will ignore a lot of the errors (as we expect things to be a little broken)
+			// if err != nil {
+			// 	//log.Fatal(err)
+			// }
+			go func(conn net.Conn) {
+				buf := make([]byte, 1024)
+				_, err := conn.Read(buf)
+				if err != nil {
+					//fmt.Printf("Error reading: %#v\n", err)
+					//return
+				}
+				fmt.Println("Authentication>", color.GreenString("Authorisation recieved"))
+
+				// fmt.Printf("Message received: %s\n", string(buf[:len]))
+
+				conn.Write([]byte("Message received.\n"))
+				conn.Close()
+			}(conn)
+		}
+	}()
+
+	// Connect to e2e endpoint with a second timeout
+	for {
+		time.Sleep(time.Second)
+
+		conn, err := net.DialTimeout("tcp", "127.0.0.1:2001", time.Second)
+		if err != nil {
+			//log.Error(fmt.Sprintf("Dial failed: %v", err.Error()))
+			continue
+		}
+		_, err = conn.Write([]byte("The Grid, a digital frontier"))
+		if err != nil {
+			//log.Error("Write data failed: %v ", err.Error())
+		}
+
+		// buffer to get data
+		received := make([]byte, 1024)
+		_, err = conn.Read(received)
+		if err != nil {
+			//log.Error("Read data failed:", err.Error())
+		} else {
+			//println("Received message: %s", string(received))
+			conn.Close()
+			break
+		}
+		// Wait for a second and connect again
+		time.Sleep(time.Second)
+	}
+	return nil
+}
+
+func (s *securityLevel) fourthLock(m *ebpf.Map) error {
 	fmt.Println("Connect>", color.YellowString("Empire local Mainframe"))
 	conn, err := net.DialUDP("udp", nil, &net.UDPAddr{
 		Port: 9000,
