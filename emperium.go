@@ -33,15 +33,17 @@ func (s *securityLevel) keyWatch(watchedMaps [4]*ebpf.Map) {
 		go func() {
 			s.secondLock(&wg, &wg2, &once)
 		}()
+		wg2.Wait()
 	}
-	wg2.Wait()
 	if !third {
 		s.thirdLock(watchedMaps[2])
 	}
 	if !fourth {
 		s.fourthLock(watchedMaps[3])
 	}
-	wg.Wait()
+	if !second {
+		wg.Wait()
+	}
 
 }
 
