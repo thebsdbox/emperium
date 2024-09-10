@@ -24,9 +24,9 @@ const tie = `
    g-.  .Lg'                 ..,..'-....,'.
   .'.   .Y^                  .....',].._f
   ......-f.                 .-,,.,.-:--&'
-                            .'...'..'_J'
+                            .'...'..'_J'       Sienar Fleet Systems
                             .~......'#'        Tie Fighter Manufacturing   
-                            '..,,.,_]'           Security Systems
+                            '..,,.,_]'         Security Mainframe
                             .L..'..''.
 `
 
